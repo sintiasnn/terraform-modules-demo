@@ -1,228 +1,249 @@
 # Terraform Modules Demo
 
-Repository ini adalah materi demo untuk presentasi teaching: **"Introducing Terraform Modules: Making Infrastructure As Code Easier"**
+![Terraform](https://img.shields.io/badge/Terraform-1.x-purple?logo=terraform)
+![Terragrunt](https://img.shields.io/badge/Terragrunt-latest-blue?logo=gruntwork)
+![AWS](https://img.shields.io/badge/AWS-EC2-orange?logo=amazon-aws)
+![License](https://img.shields.io/badge/License-MIT-green)
 
-## 📚 Tentang Repo Ini
+A demo repository for the teaching presentation: **"Introducing Terraform Modules: Making Infrastructure As Code Easier"**
 
-Repo ini dibuat untuk mengajarkan konsep Terraform Modules dan Terragrunt DRY pattern dengan cara yang mudah dipahami. Semua kode ditulis dengan komentar lengkap dalam Bahasa Indonesia agar lebih mudah diikuti.
+This repo teaches Terraform Modules and Terragrunt DRY patterns with real-world EC2 examples, written with detailed comments for easy understanding.
 
-**Tujuan pembelajaran:**
-- Memahami cara membuat dan menggunakan Terraform modules
-- Melihat bagaimana satu modul bisa dipakai untuk multiple environments
-- Mengenal Terragrunt sebagai tool untuk mengurangi duplikasi kode
-- Praktik langsung dengan contoh real-world (EC2 instances)
+---
 
-## 📁 Struktur Folder
+## Table of Contents
+
+- [Overview](#overview)
+- [Project Structure](#project-structure)
+- [Part 1: Local Modules](#part-1-local-modules)
+- [Part 2: Terragrunt (Bonus)](#part-2-terragrunt-bonus)
+- [Getting Started](#getting-started)
+- [Experiments](#experiments)
+- [Important Notes](#important-notes)
+- [References](#references)
+
+---
+
+## Overview
+
+**Learning objectives:**
+- Understand how to create and use Terraform modules
+- See how a single module can be reused across multiple environments
+- Learn Terragrunt as a tool to reduce code duplication
+- Practice with real-world examples (EC2 instances)
+
+---
+
+## Project Structure
 
 ```
 terraform-modules-demo/
 ├── modules/
-│   ├── ec2/                  # Modul reusable untuk EC2 instance
-│   └── security-group/       # Modul reusable untuk Security Group
-├── part1-modules/            # Demo Part 1: Local Modules
+│   ├── ec2/                  # Reusable EC2 instance module
+│   └── security-group/       # Reusable Security Group module
+├── part1-modules/            # Part 1: Local Modules demo
 │   ├── staging/
 │   └── production/
-└── part2-terragrunt/         # Demo Bonus: Terragrunt DRY pattern
-    ├── terragrunt.hcl        # Root config (common_tags di sini!)
+└── part2-terragrunt/         # Bonus Part 2: Terragrunt DRY pattern
+    ├── terragrunt.hcl        # Root config (common_tags defined here)
     ├── staging/
     └── production/
 ```
 
-**Part 1** fokus pada konsep dasar Terraform modules dengan 2 modul reusable.  
-**Part 2** menunjukkan bagaimana Terragrunt membuat kode lebih DRY (Don't Repeat Yourself).
+**Part 1** focuses on Terraform module fundamentals with 2 reusable modules.  
+**Part 2** shows how Terragrunt makes code more DRY (Don't Repeat Yourself).
 
 ---
 
-## 🎯 Part 1: Local Modules
+## Part 1: Local Modules
 
-### Cara Baca Alurnya
+### How to Read the Flow
 
-1. **Mulai dari `modules/ec2/`** — blueprint untuk EC2 instances
-   - `variables.tf` → definisi input yang bisa dikustomisasi
-   - `main.tf` → resource EC2 yang sebenarnya dibuat
-   - `outputs.tf` → data yang dikembalikan ke caller
+1. **Start at `modules/ec2/`** — blueprint for EC2 instances
+   - `variables.tf` → input definitions
+   - `main.tf` → actual EC2 resource
+   - `outputs.tf` → data returned to the caller
 
-2. **Lanjut ke `modules/security-group/`** — blueprint untuk Security Group
-   - `variables.tf` → definisi input (name, environment, ingress_rules)
-   - `main.tf` → resource security group dengan dynamic ingress rules
-   - `outputs.tf` → mengembalikan security_group_id
+2. **Then `modules/security-group/`** — blueprint for Security Groups
+   - `variables.tf` → input definitions (name, environment, ingress_rules)
+   - `main.tf` → security group resource with dynamic ingress rules
+   - `outputs.tf` → returns `security_group_id`
 
-3. **Lihat `part1-modules/staging/`** — environment pertama
-   - Memanggil 2 modul: security-group + ec2
-   - Konfigurasi: 3 instance, t3.micro
-   
-4. **Bandingkan dengan `part1-modules/production/`** — environment kedua
-   - Memanggil modul yang SAMA dengan konfigurasi berbeda
-   - Konfigurasi: 5 instance, t3.large
+3. **See `part1-modules/staging/`** — first environment
+   - Calls 2 modules: security-group + ec2
+   - Config: 3 instances, t3.micro
 
-### 💡 Aha Moment!
+4. **Compare with `part1-modules/production/`** — second environment
+   - Calls the **same modules** with different values
+   - Config: 5 instances, t3.large
 
-**Dua environment, dua modul reusable!**
+### The Aha Moment
 
-Perhatikan bahwa `staging` dan `production` menggunakan modul yang sama persis, tapi dengan nilai variabel yang berbeda:
+**Two environments, two reusable modules — one codebase!**
 
 | Environment | instance_count | instance_type | security_group |
 |-------------|----------------|---------------|----------------|
 | Staging     | 3              | t3.micro      | staging-sg     |
 | Production  | 5              | t3.large      | production-sg  |
 
-Ini adalah kekuatan modules: **Write once, use everywhere!**
-
-### 🚀 Cara Jalankan
-
-```bash
-# Masuk ke folder staging
-cd part1-modules/staging
-
-# Initialize Terraform (download provider, setup modules)
-terraform init
-
-# Lihat apa yang akan dibuat (dry-run)
-terraform plan
-
-# Untuk production, ulangi langkah yang sama
-cd ../production
-terraform init
-terraform plan
-```
-
-**Catatan:** Jangan jalankan `terraform apply` kecuali kamu punya AWS credentials dan siap membuat resource sungguhan!
+This is the power of modules: **Write once, use everywhere!**
 
 ---
 
-## 🎁 Part 2 Bonus: Terragrunt
+## Part 2: Terragrunt (Bonus)
 
-### Masalah yang Dipecahkan
+### Problem It Solves
 
-Di Part 1, kita sudah mengurangi duplikasi dengan modules. Tapi masih ada masalah:
+Part 1 already reduces duplication with modules, but there's still repetition:
 
-❌ **Sebelum Terragrunt:**
-- Provider config diulang di setiap environment
-- Tags seperti `Project`, `ManagedBy`, `Version` harus ditulis manual di setiap tempat
-- Kalau mau update version, harus edit banyak file
+❌ **Without Terragrunt:**
+- Provider config repeated in every environment
+- Tags like `Project`, `ManagedBy`, `Version` must be written manually everywhere
+- Updating a version means editing multiple files
 
-✅ **Dengan Terragrunt:**
-- Provider config di-generate otomatis
-- Common tags didefinisikan sekali di root, inject otomatis ke semua environment
-- Update version di 1 baris → semua resource ter-update!
+✅ **With Terragrunt:**
+- Provider config auto-generated
+- Common tags defined once at root, automatically injected into all environments
+- Update version in 1 line → all resources updated!
 
-### Cara Kerja common_tags
+### How `common_tags` Works
 
-1. **Definisi di `part2-terragrunt/terragrunt.hcl` (root):**
+```mermaid
+flowchart TD
+    A["part2-terragrunt/terragrunt.hcl\ncommon_tags defined here"] --> B["staging/terragrunt.hcl\ninherits common_tags"]
+    A --> C["production/terragrunt.hcl\ninherits common_tags"]
+    B --> D["module 'app'\nextra_tags = var.common_tags"]
+    C --> D
+    D --> E["EC2 tags = merge(local tags, extra_tags)"]
+```
+
+1. **Define in root `part2-terragrunt/terragrunt.hcl`:**
    ```hcl
    inputs = {
      common_tags = {
-       Project    = "terraform-modules-demo"
-       ManagedBy  = "Terragrunt"
-       Version    = "v1.0.0"
+       Project   = "terraform-modules-demo"
+       ManagedBy = "Terragrunt"
+       Version   = "v1.0.0"
      }
    }
    ```
 
-2. **Otomatis tersedia di child configs:**
-   - `staging/terragrunt.hcl` tidak perlu menulis ulang common_tags
-   - `production/terragrunt.hcl` juga tidak perlu menulis ulang
-   - Semua environment dapat common_tags secara otomatis!
+2. **Automatically available in child configs** — no need to repeat in staging or production.
 
-3. **Dipakai di Terraform code:**
+3. **Used in Terraform code:**
    ```hcl
    module "app" {
-     extra_tags = var.common_tags  # Inject ke modul
+     extra_tags = var.common_tags
    }
    ```
 
-4. **Digabungkan di modul EC2:**
+4. **Merged in the EC2 module:**
    ```hcl
    tags = merge(
      { Name = "...", Environment = "..." },
-     var.extra_tags  # common_tags masuk di sini
+     var.extra_tags
    )
    ```
 
-### 💡 Highlight: Update Version di 1 Baris
+### Highlight: Update Version in 1 Line
 
-Coba ubah `version = "v1.0.0"` menjadi `version = "v2.0.0"` di `part2-terragrunt/terragrunt.hcl`.
+Change `Version = "v1.0.0"` to `Version = "v2.0.0"` in `part2-terragrunt/terragrunt.hcl` — all resources in staging **and** production will automatically get `Version = "v2.0.0"` without touching any other file.
 
-Semua resource di staging DAN production akan otomatis punya tag `Version = "v2.0.0"` tanpa perlu edit file lain!
+---
 
-### 🚀 Cara Jalankan
+## Getting Started
+
+### Prerequisites
+
+- [Terraform](https://developer.hashicorp.com/terraform/install) >= 1.0
+- [Terragrunt](https://terragrunt.gruntwork.io/docs/getting-started/install/) (for Part 2)
+- AWS credentials configured (only needed for `terraform apply`)
+
+### Part 1: Local Modules
 
 ```bash
-# Masuk ke folder staging
+# Staging
+cd part1-modules/staging
+terraform init
+terraform plan
+
+# Production
+cd ../production
+terraform init
+terraform plan
+```
+
+### Part 2: Terragrunt
+
+```bash
+# Staging
 cd part2-terragrunt/staging
-
-# Initialize dengan Terragrunt
 terragrunt init
-
-# Lihat apa yang akan dibuat
 terragrunt plan
 
-# Untuk production, ulangi langkah yang sama
+# Production
 cd ../production
 terragrunt init
 terragrunt plan
 ```
 
-**Perhatikan:** Terragrunt akan auto-generate file `provider.tf` di folder staging dan production.
+> **Note:** Terragrunt will auto-generate a `provider.tf` file in each environment folder.
+
+> **Do not run `terraform apply` / `terragrunt apply`** unless you have AWS credentials and are ready to create real resources!
 
 ---
 
-### 🧪 Eksperimen Sendiri
+## Experiments
 
-Setelah memahami konsep dasarnya, coba eksperimen berikut:
-
-### Eksperimen 1: Ubah Instance Count
+### Experiment 1: Change Instance Count
 ```bash
 cd part1-modules/staging
-# Edit main.tf, ubah instance_count dari 3 menjadi 2
+# Edit main.tf: change instance_count from 3 to 2
 terraform plan
-# Lihat bagaimana Terraform akan menghapus 1 instance
+# See how Terraform plans to destroy 1 instance
 ```
 
-### Eksperimen 2: Kustomisasi Security Group Rules
+### Experiment 2: Customize Security Group Rules
 ```hcl
 # Edit part1-modules/staging/main.tf
 module "security_group" {
-  source = "../../modules/security-group"
-  
+  source      = "../../modules/security-group"
   name        = "sg"
   environment = "staging"
-  
-  # Tambahkan custom ingress rules
+
   ingress_rules = [
     {
       from_port   = 22
       to_port     = 22
       protocol    = "tcp"
-      cidr_blocks = ["10.0.0.0/8"]  # Hanya dari internal network
+      cidr_blocks = ["10.0.0.0/8"]   # Internal network only
     },
     {
       from_port   = 443
       to_port     = 443
       protocol    = "tcp"
-      cidr_blocks = ["0.0.0.0/0"]  # HTTPS dari mana saja
+      cidr_blocks = ["0.0.0.0/0"]    # HTTPS from anywhere
     }
   ]
 }
 ```
 
-### Eksperimen 3: Tambah Tag Baru di Terragrunt
+### Experiment 3: Add a New Tag in Terragrunt
 ```hcl
 # Edit part2-terragrunt/terragrunt.hcl
 inputs = {
   common_tags = {
-    Project    = "terraform-modules-demo"
-    ManagedBy  = "Terragrunt"
-    Version    = "v1.0.0"
-    Owner      = "Tim DevOps"  # Tag baru!
+    Project   = "terraform-modules-demo"
+    ManagedBy = "Terragrunt"
+    Version   = "v1.0.0"
+    Owner     = "DevOps Team"   # New tag!
   }
 }
 ```
-Jalankan `terragrunt plan` di staging dan production — tag baru otomatis muncul di semua resource!
+Run `terragrunt plan` in staging and production — the new tag appears in all resources automatically!
 
-### Eksperimen 4: Tambah Environment Baru (UAT)
+### Experiment 4: Add a New Environment (UAT)
 ```bash
-# Copy folder staging
 cp -r part2-terragrunt/staging part2-terragrunt/uat
 
 # Edit part2-terragrunt/uat/terragrunt.hcl
@@ -232,7 +253,6 @@ inputs = {
   instance_type  = "t3.small"
 }
 
-# Jalankan
 cd part2-terragrunt/uat
 terragrunt init
 terragrunt plan
@@ -240,24 +260,24 @@ terragrunt plan
 
 ---
 
-## ⚠️ Catatan Penting
+## Important Notes
 
-**Repo ini untuk DEMO dan PEMBELAJARAN saja!**
+**This repo is for DEMO and LEARNING purposes only!**
 
-- ❌ Jangan di-apply ke AWS sungguhan tanpa memahami konsekuensinya
-- ❌ Tidak ada backend configuration (state disimpan lokal)
-- ❌ Security group rules menggunakan default 0.0.0.0/0 (tidak aman untuk production)
-- ❌ Tidak ada error handling atau validation yang lengkap
+- ❌ Do not apply to real AWS without understanding the consequences
+- ❌ No remote backend configured (state stored locally)
+- ❌ Security group rules use `0.0.0.0/0` by default (not safe for production)
+- ❌ No complete error handling or input validation
 
-Jika ingin menggunakan untuk production:
-- Setup remote backend (S3 + DynamoDB)
-- Perketat security group rules via `ingress_rules` variable
-- Tambahkan validation dan error handling
-- Gunakan AWS credentials dengan IAM role yang proper
+For production use:
+- Set up a remote backend (S3 + DynamoDB)
+- Restrict security group rules via the `ingress_rules` variable
+- Add proper validation and error handling
+- Use AWS credentials with a least-privilege IAM role
 
 ---
 
-## 📖 Referensi
+## References
 
 - [Terraform Modules Documentation](https://developer.hashicorp.com/terraform/language/modules)
 - [Terragrunt Documentation](https://terragrunt.gruntwork.io/docs/)
@@ -265,6 +285,6 @@ Jika ingin menggunakan untuk production:
 
 ---
 
-**Selamat belajar! 🚀**
+**Happy learning! 🚀**
 
-Jika ada pertanyaan atau menemukan bug, silakan buka issue atau diskusikan dengan instruktur.
+If you have questions or find a bug, feel free to open an issue or discuss with the instructor.
