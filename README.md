@@ -277,6 +277,13 @@ For production use:
 
 ---
 
+## Author
+
+**Ni Putu Sintia Wati**
+- GitHub: [@sintiasnn](https://github.com/sintiasnn)
+
+---
+
 ## References
 
 - [Terraform Modules Documentation](https://developer.hashicorp.com/terraform/language/modules)
